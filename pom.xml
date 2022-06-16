@@ -12,7 +12,7 @@
 	<artifactId>technical.test</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
-	<name>Technical Test</name>
+	<name>Satellite</name>
 	<description> Technical Test</description>
 	<properties>
 		<java.version>11</java.version>
