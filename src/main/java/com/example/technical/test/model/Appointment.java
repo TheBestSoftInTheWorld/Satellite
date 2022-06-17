@@ -3,6 +3,7 @@ package com.example.technical.test.model;
 import java.util.Date;
 
 public class Appointment {
+    long id;
     Date appointmentTime;
     long personId;
     Date modified;
@@ -15,6 +16,23 @@ public class Appointment {
         this.modified = modified;
         this.reason = reason;
         this.state = state;
+    }
+
+    public Appointment(long id, Date appointmentTime, long personId, Date modified, String reason, StateEnum state) {
+        this.id = id;
+        this.appointmentTime = appointmentTime;
+        this.personId = personId;
+        this.modified = modified;
+        this.reason = reason;
+        this.state = state;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public Date getAppointmentTime() {

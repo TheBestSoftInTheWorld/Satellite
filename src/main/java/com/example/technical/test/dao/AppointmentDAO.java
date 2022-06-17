@@ -18,7 +18,7 @@ public class AppointmentDAO implements IAppointmentDAO {
     public final String TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 
     @Override
-    public List<Appointment> getAppointments(Date from) {
+    public List<Appointment> getAppointments() {
         try {
             List<Appointment> appointmentsList = new ArrayList<>();
             File file = ResourceUtils.getFile("classpath:appointment.csv");

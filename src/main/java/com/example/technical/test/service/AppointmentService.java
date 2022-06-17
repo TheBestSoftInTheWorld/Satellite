@@ -15,7 +15,7 @@ public class AppointmentService implements IAppointmentService {
 
     @Override
     public List<Appointment> getAppointments(Date from) {
-        List<Appointment> appointments = iAppointmentDAO.getAppointments(from);
+        List<Appointment> appointments = iAppointmentDAO.getAppointments();
         return appointments;
     }
 }
