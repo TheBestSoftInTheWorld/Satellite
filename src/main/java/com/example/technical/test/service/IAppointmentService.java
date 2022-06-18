@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface IAppointmentService {
     List<Appointment> getAppointments(Date from);
+    String setAppointments();
 }

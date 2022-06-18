@@ -4,6 +4,7 @@ import com.example.technical.test.dao.IAppointmentDAO;
 import com.example.technical.test.model.Appointment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Date;
 import java.util.List;
@@ -17,5 +18,14 @@ public class AppointmentService implements IAppointmentService {
     public List<Appointment> getAppointments(Date from) {
         List<Appointment> appointments = iAppointmentDAO.getAppointments();
         return appointments;
+    }
+
+    @Override
+    public String setAppointments() {
+        final String uri = "http://localhost:8081/api/updateAppointment";
+
+        RestTemplate restTemplate = new RestTemplate();
+        String result = restTemplate.getForObject(uri, String.class);
+        return result;
     }
 }
