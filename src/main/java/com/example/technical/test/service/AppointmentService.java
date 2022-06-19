@@ -4,12 +4,15 @@ import com.example.technical.test.dao.IAppointmentDAO;
 import com.example.technical.test.model.Appointment;
 import com.example.technical.test.model.StateEnum;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -17,8 +20,9 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class AppointmentService implements IAppointmentService {
+    Logger logger = LoggerFactory.getLogger(AppointmentService.class);
     final String API_PERSIST = "http://localhost:8081/api/persistAppointments";
-    List<Appointment> sentAppointments = new ArrayList<>();
+    List<Appointment> sentAppointments = new CopyOnWriteArrayList<>();
 
     @Autowired
     IAppointmentDAO iAppointmentDAO;
@@ -100,8 +104,7 @@ public class AppointmentService implements IAppointmentService {
     public void runEvery30Sekond() {
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         Runnable task = () -> {
-            System.out.println("30 sekund");
-            p();
+            generate();
         };
         executor.scheduleWithFixedDelay(task, 0, 30000, TimeUnit.MILLISECONDS);
     }
@@ -111,10 +114,29 @@ public class AppointmentService implements IAppointmentService {
         runEvery30Sekond();
     }
 
-    private void p() {
-        List<Appointment> appointmentList = generateAppointments(30);
+    private void generate() {
+        Thread thread = new Thread("Thread") {
+            public void run(){
+                logger.info("run by: " + getName());
+                List<Appointment> appointmentList = generateAppointments(30);
 
-        setAppointments(appointmentList);
+                setAppointments(appointmentList);
+            }
+        };
+
+        thread.start();
+
+        Thread thread2 = new Thread("Thread2") {
+            public void run(){
+                logger.info("run by: " + getName());
+                List<Appointment> appointmentList = generateAppointments(30);
+
+                setAppointments(appointmentList);
+            }
+        };
+
+        thread2.start();
+
     }
 
     private List<Integer> toIdsListFromString(String json) {
