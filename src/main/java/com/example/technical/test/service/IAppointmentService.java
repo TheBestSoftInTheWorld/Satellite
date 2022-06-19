@@ -6,6 +6,11 @@ import java.util.Date;
 import java.util.List;
 
 public interface IAppointmentService {
-    List<Appointment> getAppointments(Date from);
-    String setAppointments();
+    List<Appointment> getAppointments();
+
+    List<Appointment> generateAppointments(int size);
+
+    void setAppointments(List<Appointment> appointments);
+
+    void setRandomAppointments();
 }

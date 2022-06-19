@@ -4,7 +4,7 @@ import com.example.technical.test.model.Appointment;
 import com.example.technical.test.model.StateEnum;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.ResourceUtils;
-//import org.springframework.transaction.annotation.Transactional;
+
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,7 +12,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-//@Transactional
+
 @Repository
 public class AppointmentDAO implements IAppointmentDAO {
     public final String TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
