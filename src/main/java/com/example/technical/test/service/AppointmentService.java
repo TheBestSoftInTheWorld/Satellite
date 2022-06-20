@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class AppointmentService implements IAppointmentService {
     Logger logger = LoggerFactory.getLogger(AppointmentService.class);
-    final String API_PERSIST = "http://localhost:8081/api/persistAppointments";
+    final String API_PERSIST = "http://localhost:8081/api/saveAppointments";
     List<Appointment> sentAppointments = new CopyOnWriteArrayList<>();
 
     @Autowired
