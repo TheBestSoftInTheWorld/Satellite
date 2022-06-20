@@ -1,12 +1,8 @@
 package com.example.technical.test;
 
 import com.example.technical.test.controller.APIController;
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.boot.test.context.SpringBootTest;
-
-
 import org.junit.jupiter.api.Test;
 
 
