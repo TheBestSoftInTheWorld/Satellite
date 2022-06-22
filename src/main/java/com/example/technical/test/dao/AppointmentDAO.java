@@ -18,18 +18,18 @@ public class AppointmentDAO implements IAppointmentDAO {
     public final String TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 
     @Override
-    public List<Appointment> getAppointments() {
+    public List<Appointment> getAppointments(String filename) {
         try {
             List<Appointment> appointmentsList = new ArrayList<>();
-            File file = ResourceUtils.getFile("classpath:appointment.csv");
+            File file = ResourceUtils.getFile("classpath:" + filename);
             Scanner input = new Scanner(file);
             while (input.hasNextLine()) {
                 String text = input.nextLine();
                 String[] result = text.split(",");
-                if (result.length == 5) {
-                    Date date = stringToDate(result[0]);
-                    Date modified = stringToDate(result[2]);
-                    Appointment appointment = new Appointment(date, Long.parseLong(result[1]), modified, result[3], StateEnum.valueOf(result[4].toUpperCase()));
+                if (result.length == 7) {
+                    Date date = stringToDate(result[2]);
+                    Date modified = stringToDate(result[4]);
+                    Appointment appointment = new Appointment(Long.parseLong(result[0]), Long.parseLong(result[1]), date, Long.parseLong(result[3]), modified, result[5], StateEnum.valueOf(result[6].toUpperCase()));
                     appointmentsList.add(appointment);
                 }
             }

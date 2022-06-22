@@ -6,11 +6,11 @@ import com.example.technical.test.model.Appointment;
 import java.util.List;
 
 public interface IAppointmentService {
-    List<Appointment> getAppointments();
-
-    List<Appointment> generateAppointments(int size);
+    List<Appointment> getAppointments(String filename);
 
     void setAppointments(List<Appointment> appointments);
 
-    void setRandomAppointments();
+    void setAppointments();
+
+
 }

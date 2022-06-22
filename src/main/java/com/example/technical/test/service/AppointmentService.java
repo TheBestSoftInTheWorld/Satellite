@@ -13,8 +13,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 
@@ -22,122 +20,91 @@ import java.util.concurrent.TimeUnit;
 public class AppointmentService implements IAppointmentService {
     Logger logger = LoggerFactory.getLogger(AppointmentService.class);
     final String API_PERSIST = "http://localhost:8081/api/saveAppointments";
-    List<Appointment> sentAppointments = new CopyOnWriteArrayList<>();
+
 
     @Autowired
     IAppointmentDAO iAppointmentDAO;
 
     @Override
-    public List<Appointment> getAppointments() {
-        List<Appointment> appointments = iAppointmentDAO.getAppointments();
+    public List<Appointment> getAppointments(String filename) {
+        List<Appointment> appointments = iAppointmentDAO.getAppointments(filename);
         return appointments;
     }
 
-    @Override
-    public List<Appointment> generateAppointments(int size) {
-        List<Appointment> randomAppointments = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            boolean isNew = getRandomNew();
-            if (isNew) {
-                randomAppointments.add(generateNewAppointment());
-            } else {
-                randomAppointments.add(updateAppointment());
-            }
+    public void setAppointments() {
+        List<Appointment> appointments = iAppointmentDAO.getAppointments("appointments.csv");
 
+        Thread thread = new Thread("Thread") {
+            public void run() {
+                logger.info("run by: " + getName());
+
+                setAppointments(appointments);
+            }
+        };
+        thread.start();
+
+
+        try {
+            TimeUnit.SECONDS.sleep(30);
+            List<Appointment> appointments2 = iAppointmentDAO.getAppointments("appointments2.csv");
+
+            Thread thread2 = new Thread("Thread2") {
+                public void run() {
+                    logger.info("run by: " + getName());
+                    setAppointments(appointments2);
+                }
+            };
+            thread2.start();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
-        return randomAppointments;
+
     }
 
     @Override
     public void setAppointments(List<Appointment> appointments) {
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-
-        int size = appointments.size();
+        boolean exception = false;
         int i = 0;
         int from = 0;
         int to = 5;
-        while (from <= size) {
-            if (to > size) {
-                to = size;
+        do {
+
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+
+                int size = appointments.size();
+
+                while (from <= size) {
+                    if (to > size) {
+                        to = size;
+                    }
+                    List<Appointment> appointmentListForSend = appointments.subList(from, to);
+
+                    HttpEntity<List<Appointment>> entity = new HttpEntity<List<Appointment>>(appointmentListForSend, headers);
+                    RestTemplate restTemplate = new RestTemplate();
+                    ResponseEntity<String> result = restTemplate.exchange(API_PERSIST, HttpMethod.POST, entity, String.class);
+
+
+                    if (!result.getStatusCode().equals(HttpStatus.OK)) {
+                        break;
+                    }
+                    from = from + 5;
+                    to = to + 5;
+
+                }
+            } catch (Exception e) {
+                //Exception for status code from http
+                exception = true;
+                e.printStackTrace();
+
             }
-            List<Appointment> appointmentListForSend = appointments.subList(from, to);
+        } while (!exception);
 
-            HttpEntity<List<Appointment>> entity = new HttpEntity<List<Appointment>>(appointmentListForSend, headers);
-            RestTemplate restTemplate = new RestTemplate();
-            ResponseEntity<String> result = restTemplate.exchange(API_PERSIST, HttpMethod.POST, entity, String.class);
-            addToListSentAppointments(result.getBody(), appointmentListForSend);
-            if (!result.getStatusCode().equals(HttpStatus.OK)) {
-                break;
-            }
-            from = from + 5;
-            to = to + 5;
-
-        }
-    }
-
-    private void addToListSentAppointments(String ids, List<Appointment> appointments) {
-        List<Integer> idsList = toIdsListFromString(ids);
-
-        for (int i = 0; i < appointments.size(); i++) {
-            Appointment appointment = appointments.get(i);
-            if (idsList.get(i) == null) {
-                break;
-            }
-
-            long id = idsList.get(i).longValue();
-
-            appointment.setId(idsList.get(i));
-            if (sentAppointments.stream().filter(tmp -> tmp.getId() == id).findAny().isPresent()) {
-                sentAppointments.removeIf(tmp -> tmp.getId() == id);
-                sentAppointments.add(appointment);
-            } else {
-                sentAppointments.add(appointment);
-            }
-
-        }
 
     }
 
-    public void runEvery30Sekond() {
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        Runnable task = () -> {
-            generate();
-        };
-        executor.scheduleWithFixedDelay(task, 0, 30000, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public void setRandomAppointments() {
-        runEvery30Sekond();
-    }
-
-    private void generate() {
-        Thread thread = new Thread("Thread") {
-            public void run(){
-                logger.info("run by: " + getName());
-                List<Appointment> appointmentList = generateAppointments(30);
-
-                setAppointments(appointmentList);
-            }
-        };
-
-        thread.start();
-
-        Thread thread2 = new Thread("Thread2") {
-            public void run(){
-                logger.info("run by: " + getName());
-                List<Appointment> appointmentList = generateAppointments(30);
-
-                setAppointments(appointmentList);
-            }
-        };
-
-        thread2.start();
-
-    }
 
     private List<Integer> toIdsListFromString(String json) {
         List<Integer> result = new ArrayList<Integer>();
@@ -151,61 +118,5 @@ public class AppointmentService implements IAppointmentService {
         return result;
     }
 
-    private boolean getRandomNew() {
-        List<Boolean> givenList = Arrays.asList(true, false);
-        Random rand = new Random();
-        boolean randomElement = givenList.get(rand.nextInt(givenList.size()));
-        return randomElement;
-    }
 
-    private String getRandomState() {
-        List<String> givenList = Arrays.asList("APPROVED", "NOT_APPROVED");
-        Random rand = new Random();
-        String randomElement = givenList.get(rand.nextInt(givenList.size()));
-        return randomElement;
-    }
-
-    private String getRandomReason() {
-        List<String> givenList = Arrays.asList("flu", "toothache", "advice");
-        Random rand = new Random();
-        String randomElement = givenList.get(rand.nextInt(givenList.size()));
-        return randomElement;
-    }
-
-    private Appointment generateNewAppointment() {
-        long personId = getRandomPersonId();
-        String reason = getRandomReason();
-        StateEnum stateEnum = StateEnum.valueOf(getRandomState());
-        return new Appointment(new Date(), personId, new Date(), reason, stateEnum);
-    }
-
-    private Appointment updateAppointment() {
-        Appointment randomAppoitment = getRandomAppointment();
-        randomAppoitment.setModified(new Date());
-        randomAppoitment.setReason(getRandomReason());
-        randomAppoitment.setState(StateEnum.valueOf(getRandomState()));
-        return randomAppoitment;
-    }
-
-    private Appointment getRandomAppointment() {
-        if (sentAppointments.isEmpty()) {
-            return null;
-        }
-        List<Appointment> givenList = sentAppointments;
-        Random rand = new Random();
-        Appointment randomElement = givenList.get(rand.nextInt(givenList.size()));
-        return randomElement;
-    }
-
-    private long getRandomPersonId() {
-        List<Long> givenList = Arrays.asList(Long.valueOf(1), Long.valueOf(2), Long.valueOf(3), Long.valueOf(4), Long.valueOf(5),
-                Long.valueOf(6), Long.valueOf(7), Long.valueOf(8), Long.valueOf(9), Long.valueOf(10),
-                Long.valueOf(11), Long.valueOf(12), Long.valueOf(13), Long.valueOf(14), Long.valueOf(15),
-                Long.valueOf(16), Long.valueOf(17), Long.valueOf(18), Long.valueOf(19), Long.valueOf(20),
-                Long.valueOf(21), Long.valueOf(22), Long.valueOf(23), Long.valueOf(24), Long.valueOf(25),
-                Long.valueOf(26), Long.valueOf(27), Long.valueOf(28), Long.valueOf(29), Long.valueOf(30));
-        Random rand = new Random();
-        long randomElement = givenList.get(rand.nextInt(givenList.size()));
-        return randomElement;
-    }
 }

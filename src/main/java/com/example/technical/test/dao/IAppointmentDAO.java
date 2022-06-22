@@ -6,5 +6,5 @@ import java.util.Date;
 import java.util.List;
 
 public interface IAppointmentDAO {
-    List<Appointment> getAppointments();
+    List<Appointment> getAppointments(String filename);
 }

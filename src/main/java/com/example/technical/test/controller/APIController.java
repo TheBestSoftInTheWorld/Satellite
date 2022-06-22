@@ -24,23 +24,8 @@ public class APIController {
     @ResponseBody
     public ResponseEntity<List<Appointment>> appointments() {
 
-        List<Appointment> result = iAppointmentService.getAppointments();
+        List<Appointment> result = iAppointmentService.getAppointments("appointments.csv");
         return new ResponseEntity<List<Appointment>>(result, HttpStatus.OK);
-    }
-
-    @RequestMapping(method = RequestMethod.GET, value = "generateAppointments")
-    @ResponseBody
-    public ResponseEntity<List<Appointment>> generateAppointments(@RequestParam("size") Integer limit) {
-        List<Appointment> result = iAppointmentService.generateAppointments(limit);
-        return new ResponseEntity<List<Appointment>>(result, HttpStatus.OK);
-    }
-
-    @RequestMapping(method = RequestMethod.GET, value = "setappointments")
-    @ResponseBody
-    public ResponseEntity setAppointments() {
-        iAppointmentService.setAppointments(iAppointmentService.getAppointments());
-        iAppointmentService.setRandomAppointments();
-        return new ResponseEntity(HttpStatus.OK);
     }
 
 

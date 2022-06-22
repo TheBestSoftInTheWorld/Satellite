@@ -3,27 +3,23 @@ package com.example.technical.test.model;
 import java.util.Date;
 
 public class Appointment {
-    public long id;
+
+    public long remoteAppointmentId;
+    public long companyId;
     public Date appointmentTime;
     public long personId;
     public Date modified;
     public String reason;
     public StateEnum state;
 
-    public Appointment(Date appointmentTime, long personId, Date modified, String reason, StateEnum state) {
+    public Appointment(long remoteAppointmentId, long companyId, Date appointmentTime, long personId, Date modified, String reason, StateEnum state) {
+        this.remoteAppointmentId = remoteAppointmentId;
+        this.companyId = companyId;
         this.appointmentTime = appointmentTime;
         this.personId = personId;
         this.modified = modified;
         this.reason = reason;
         this.state = state;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
 
     public Date getAppointmentTime() {
@@ -64,5 +60,21 @@ public class Appointment {
 
     public void setState(StateEnum state) {
         this.state = state;
+    }
+
+    public long getRemoteAppointmentId() {
+        return remoteAppointmentId;
+    }
+
+    public void setRemoteAppointmentId(long remoteAppointmentId) {
+        this.remoteAppointmentId = remoteAppointmentId;
+    }
+
+    public long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(long companyId) {
+        this.companyId = companyId;
     }
 }
