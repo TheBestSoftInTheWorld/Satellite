@@ -12,5 +12,5 @@ public interface IAppointmentService {
 
     void setAppointments();
 
-
+    void runEvery30Seconds();
 }

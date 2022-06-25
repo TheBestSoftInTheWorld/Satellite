@@ -11,6 +11,7 @@ public class Appointment {
     public Date modified;
     public String reason;
     public StateEnum state;
+    public boolean send;
 
     public Appointment(long remoteAppointmentId, long companyId, Date appointmentTime, long personId, Date modified, String reason, StateEnum state) {
         this.remoteAppointmentId = remoteAppointmentId;
@@ -76,5 +77,13 @@ public class Appointment {
 
     public void setCompanyId(long companyId) {
         this.companyId = companyId;
+    }
+
+    public boolean isSend() {
+        return send;
+    }
+
+    public void setSend(boolean send) {
+        this.send = send;
     }
 }

@@ -20,7 +20,7 @@ public class TechnicalTestApplication {
     @Bean
     public CommandLineRunner CommandLineRunnerBean() {
         return (args) -> {
-            iAppointmentService.setAppointments();
+            iAppointmentService.runEvery30Seconds();
         };
     }
 }

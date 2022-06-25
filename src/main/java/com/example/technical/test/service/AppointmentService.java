@@ -2,18 +2,20 @@ package com.example.technical.test.service;
 
 import com.example.technical.test.dao.IAppointmentDAO;
 import com.example.technical.test.model.Appointment;
-import com.example.technical.test.model.StateEnum;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -32,6 +34,7 @@ public class AppointmentService implements IAppointmentService {
     }
 
     public void setAppointments() {
+        logger.info("checking for new appointments");
         List<Appointment> appointments = iAppointmentDAO.getAppointments("appointments.csv");
 
         Thread thread = new Thread("Thread") {
@@ -64,47 +67,50 @@ public class AppointmentService implements IAppointmentService {
 
     @Override
     public void setAppointments(List<Appointment> appointments) {
-        boolean exception = false;
-        int i = 0;
-        int from = 0;
-        int to = 5;
+        List<Appointment> appointmentsForSent;
         do {
-
+            // filter(appointment -> appointment.getModified().before(new Date())
+            // it imitates the action of the emergence of new appointments
+            appointmentsForSent = appointments.stream().filter(appointment -> !appointment.isSend())
+                    .filter(appointment -> appointment.getModified().before(new Date()))
+                    .limit(5).collect(Collectors.toList());
+            if (appointmentsForSent.isEmpty()) {
+                logger.info("Appointments for sent is empty");
+                return;
+            } else {
+                logger.info("sending data about appointments");
+            }
             try {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-
-                int size = appointments.size();
-
-                while (from <= size) {
-                    if (to > size) {
-                        to = size;
-                    }
-                    List<Appointment> appointmentListForSend = appointments.subList(from, to);
-
-                    HttpEntity<List<Appointment>> entity = new HttpEntity<List<Appointment>>(appointmentListForSend, headers);
-                    RestTemplate restTemplate = new RestTemplate();
-                    ResponseEntity<String> result = restTemplate.exchange(API_PERSIST, HttpMethod.POST, entity, String.class);
-
-
-                    if (!result.getStatusCode().equals(HttpStatus.OK)) {
-                        break;
-                    }
-                    from = from + 5;
-                    to = to + 5;
-
+                HttpEntity<List<Appointment>> entity = new HttpEntity<List<Appointment>>(appointmentsForSent, headers);
+                RestTemplate restTemplate = new RestTemplate();
+                ResponseEntity<String> result = restTemplate.exchange(API_PERSIST, HttpMethod.POST, entity, String.class);
+                changeAppointmentsForSent(result.getBody(), appointments);
+                if (result.getStatusCode().equals(HttpStatus.OK)) {
+                    logger.info("status code 200 for sent appointments");
                 }
+            } catch (HttpStatusCodeException exception) {
+                //Exception for status code from http
+                logger.info("Exception for sent appointments, status code: " + exception.getStatusCode().value());
+                exception.printStackTrace();
             } catch (Exception e) {
                 //Exception for status code from http
-                exception = true;
+                logger.info("Exception for sent appointments");
                 e.printStackTrace();
-
             }
-        } while (!exception);
+        } while (!appointmentsForSent.isEmpty());
 
 
     }
 
+    private void changeAppointmentsForSent(String ids, List<Appointment> appointmentsSent) {
+        List<Integer> idsList = toIdsListFromString(ids);
+        for (int i = 0; i < idsList.size(); i++) {
+            long remoteAppointmentId = idsList.get(i).longValue();
+            appointmentsSent.stream().filter(appointment -> appointment.getRemoteAppointmentId() == remoteAppointmentId).forEach(foundAppointment -> foundAppointment.setSend(true));
+        }
+    }
 
     private List<Integer> toIdsListFromString(String json) {
         List<Integer> result = new ArrayList<Integer>();
@@ -112,11 +118,18 @@ public class AppointmentService implements IAppointmentService {
         try {
             result = objectMapper.readValue(json, List.class);
         } catch (Exception e) {
-            e.printStackTrace();
         }
 
         return result;
     }
 
+    @Override
+    public void runEvery30Seconds() {
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        Runnable task = () -> {
+            setAppointments();
+        };
+        executor.scheduleWithFixedDelay(task, 0, 30000, TimeUnit.MILLISECONDS);
+    }
 
 }
