@@ -12,6 +12,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -36,33 +37,21 @@ public class AppointmentService implements IAppointmentService {
     public void setAppointments() {
         logger.info("checking for new appointments");
         List<Appointment> appointments = iAppointmentDAO.getAppointments("appointments.csv");
+        List<Appointment> appointments2 = iAppointmentDAO.getAppointments("appointments2.csv");
 
-        Thread thread = new Thread("Thread") {
-            public void run() {
-                logger.info("run by: " + getName());
-
-                setAppointments(appointments);
-            }
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        Runnable task1 = () -> {
+            logger.info("Executing Task1 inside : " + Thread.currentThread().getName());
+            setAppointments(appointments);
         };
-        thread.start();
 
+        Runnable task2 = () -> {
+            System.out.println("Executing Task2 inside : " + Thread.currentThread().getName());
+            setAppointments(appointments2);
 
-        try {
-            TimeUnit.SECONDS.sleep(30);
-            List<Appointment> appointments2 = iAppointmentDAO.getAppointments("appointments2.csv");
-
-            Thread thread2 = new Thread("Thread2") {
-                public void run() {
-                    logger.info("run by: " + getName());
-                    setAppointments(appointments2);
-                }
-            };
-            thread2.start();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
+        };
+        executorService.submit(task1);
+        executorService.submit(task2);
     }
 
     @Override
@@ -76,30 +65,32 @@ public class AppointmentService implements IAppointmentService {
                     .limit(5).collect(Collectors.toList());
             if (appointmentsForSent.isEmpty()) {
                 logger.info("Appointments for sent is empty");
-                return;
+
             } else {
                 logger.info("sending data about appointments");
-            }
-            try {
-                HttpHeaders headers = new HttpHeaders();
-                headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-                HttpEntity<List<Appointment>> entity = new HttpEntity<List<Appointment>>(appointmentsForSent, headers);
-                RestTemplate restTemplate = new RestTemplate();
-                ResponseEntity<String> result = restTemplate.exchange(API_PERSIST, HttpMethod.POST, entity, String.class);
-                changeAppointmentsForSent(result.getBody(), appointments);
-                if (result.getStatusCode().equals(HttpStatus.OK)) {
-                    logger.info("status code 200 for sent appointments");
+
+                try {
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+                    HttpEntity<List<Appointment>> entity = new HttpEntity<List<Appointment>>(appointmentsForSent, headers);
+                    RestTemplate restTemplate = new RestTemplate();
+                    ResponseEntity<String> result = restTemplate.exchange(API_PERSIST, HttpMethod.POST, entity, String.class);
+                    changeAppointmentsForSent(result.getBody(), appointments);
+                    if (result.getStatusCode().equals(HttpStatus.OK)) {
+                        logger.info("status code 200 for sent appointments");
+                    }
+                } catch (HttpStatusCodeException exception) {
+                    //Exception for status code from http
+                    logger.info("Exception for sent appointments, status code: " + exception.getStatusCode().value());
+                    exception.printStackTrace();
+                } catch (Exception e) {
+                    //Exception for status code from http
+                    logger.info("Exception for sent appointments");
+                    e.printStackTrace();
                 }
-            } catch (HttpStatusCodeException exception) {
-                //Exception for status code from http
-                logger.info("Exception for sent appointments, status code: " + exception.getStatusCode().value());
-                exception.printStackTrace();
-            } catch (Exception e) {
-                //Exception for status code from http
-                logger.info("Exception for sent appointments");
-                e.printStackTrace();
             }
-        } while (!appointmentsForSent.isEmpty());
+        }
+        while (!appointmentsForSent.isEmpty());
 
 
     }
