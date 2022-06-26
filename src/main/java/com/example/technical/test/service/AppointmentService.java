@@ -2,6 +2,7 @@ package com.example.technical.test.service;
 
 import com.example.technical.test.dao.IAppointmentDAO;
 import com.example.technical.test.model.Appointment;
+import com.example.technical.test.model.StateEnum;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ public class AppointmentService implements IAppointmentService {
         };
 
         Runnable task2 = () -> {
-            System.out.println("Executing Task2 inside : " + Thread.currentThread().getName());
+            logger.info("Executing Task2 inside : " + Thread.currentThread().getName());
             setAppointments(appointments2);
 
         };
@@ -64,7 +65,7 @@ public class AppointmentService implements IAppointmentService {
                     .filter(appointment -> appointment.getModified().before(new Date()))
                     .limit(5).collect(Collectors.toList());
             if (appointmentsForSent.isEmpty()) {
-                logger.info("Appointments for sent is empty");
+                logger.info("List of appointments for sent is empty");
 
             } else {
                 logger.info("sending data about appointments");
